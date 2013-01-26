@@ -1,0 +1,10 @@
+-> CactusLauncher (main class)
+	-> Check existence of launcher files
+		-> If not
+		  -> Check which, if any, files exist
+		  -> Download required modpack, version, etc. files
+		-> Check for launcher updates (check version files of existing and those on server)
+			-> If yes, download new launcher files, 
+			  -> Install
+			  -> Exit
+			-> If no, Initialise + open MainWindow 

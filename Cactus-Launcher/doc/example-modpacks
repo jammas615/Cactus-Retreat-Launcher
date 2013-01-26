@@ -1,0 +1,12 @@
+//
+// '#' = node definition.
+// Every line following '#...' and up until the next '#' is a document.
+// Each document has a label then a value, a single colon separates the two.
+// eg. <label>:<value>
+// 
+
+// Example modpacks definition file.
+#modpacks
+tekkit:Tekkit
+tfc:Terra Firma Craft
+voltz:Voltz
