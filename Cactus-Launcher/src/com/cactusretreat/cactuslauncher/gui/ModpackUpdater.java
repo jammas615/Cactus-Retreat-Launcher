@@ -16,6 +16,7 @@ import com.cactusretreat.cactuslauncher.GameUpdate;
 
 public class ModpackUpdater {
 
+	public static final int SHELL_TRIM = SWT.TITLE;
 	private Display display;
 	private Shell shell;
 	private GridLayout layout;
@@ -49,7 +50,7 @@ public class ModpackUpdater {
 	
 	private void init() {
 		display = new Display();
-		shell = new Shell();
+		shell = new Shell(SHELL_TRIM);
 		setupWindow();
 		shell.open();
 	}
@@ -87,9 +88,7 @@ public class ModpackUpdater {
 			if (!display.readAndDispatch()) {
 				display.sleep();
 			}
-			
-			//statusText.setText(statusText.getText());
-			//statusFine.setText(statusFine.getText());			
+				
 		}
 		display.dispose();
 	}
