@@ -1,6 +1,6 @@
-Cactus Launcher r1: 25/01/13
-	- 
-	
+Cactus Launcher r1-3: 27/01/13
+	- Fixed threading issues with modpack updater, preventing freezes and "...not responding" issues.
+
 Cactus Launcher r1-2: 26/01/13
 	- Added option to keep window open upon launch.
 	- Possible fix for check "save password" when profile is changed through drop-down.
@@ -9,3 +9,6 @@ Cactus Launcher r1-2: 26/01/13
 		eg.:
 		<display name>::<folder name>::<server addr>::<port>::<min rank>
 		It's a kind of Magic::magic::cactusretreat.com::25567::11
+
+Cactus Launcher r1: 25/01/13
+	- 
