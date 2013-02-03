@@ -10,13 +10,16 @@ public class CactusLauncherUpdater {
 
 	static {
 		if (System.getProperty("os.name").toLowerCase().contains("windows")) {
+			WINDOWS = true;
 			APPDATA_PATH = System.getenv("APPDATA");
 		}
 		else {
+			WINDOWS = false;
 			APPDATA_PATH = System.getProperty("user.home");
 		}
 	}
 	
+	public static boolean WINDOWS;
 	public static String UPDATE_SERVER_URL = "http://update.cactusmc.com/cactuslauncher/";
 	public static String APPDATA_PATH;
 	public static String DATA_FOLDER_PATH = APPDATA_PATH + File.separator + ".cactuslauncher";

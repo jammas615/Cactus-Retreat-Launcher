@@ -56,15 +56,17 @@ public class LauncherUpdater {
 	}
 	
 	private void init() {
-		String jvmBitString = System.getProperty("os.arch");
-		System.out.println(bits);
-		if (jvmBitString.matches("amd64")) {
-			bits = "64";
+		if (CactusLauncherUpdater.WINDOWS) {
+			String jvmBitString = System.getProperty("os.arch");
+			System.out.println(bits);
+			if (jvmBitString.matches("amd64")) {
+				bits = "64";
+			}
+			else {
+				bits = "32";
+			}
 		}
-		else {
-			bits = "32";
-		}
-		
+			
 		display = new Display();
 		shell = new Shell(display);
 		setupWindow();
@@ -159,7 +161,14 @@ public class LauncherUpdater {
 		String currentHex;
 		try {
 			currentHex = DigestUtils.md5Hex(new FileInputStream(launcherJar));
-			String newHex = DigestUtils.md5Hex(new URL(CactusLauncherUpdater.UPDATE_SERVER_URL + bits + "/" + "cactuslauncher.jar").openStream());
+			String newHex =null;
+			if (CactusLauncherUpdater.WINDOWS) {
+				newHex = DigestUtils.md5Hex(new URL(CactusLauncherUpdater.UPDATE_SERVER_URL + bits + "/" + "cactuslauncher.jar").openStream());
+			}
+			else {
+				newHex = DigestUtils.md5Hex(new URL(CactusLauncherUpdater.UPDATE_SERVER_URL + "mac" + "/" + "cactuslauncher.jar").openStream());
+			}
+				
 			
 			if (currentHex.equals(newHex)) {
 				launcherOutOfDate = false;
@@ -182,7 +191,13 @@ public class LauncherUpdater {
 		URL modpacksFileURL;
 		try {
 			modpacksFileURL = new URL(CactusLauncherUpdater.UPDATE_SERVER_URL + "modpacks");
-			URL launcherJarURL = new URL(CactusLauncherUpdater.UPDATE_SERVER_URL + bits + "/" + "cactuslauncher.jar");
+			URL launcherJarURL;
+			if (CactusLauncherUpdater.WINDOWS) {
+				launcherJarURL = new URL(CactusLauncherUpdater.UPDATE_SERVER_URL + bits + "/" + "cactuslauncher.jar");
+			}
+			else {
+				launcherJarURL = new URL(CactusLauncherUpdater.UPDATE_SERVER_URL + "mac" + "/" + "cactuslauncher.jar");
+			}
 			
 			statusFine.setText("Updating modpacks info");
 			copyURLToFile(modpacksFileURL, modpacksFile);
