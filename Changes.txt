@@ -1,3 +1,8 @@
+Cactus Launcher r1-4 3/02/13
+	- Combined "force update" into both "force update" and "clear cache".
+	- Made modpack updater progress bar show download progress.
+	- Added timeout to server stat retrieval to prevent crashes.
+
 Cactus Launcher r1-3: 27/01/13
 	- Fixed threading issues with modpack updater, preventing freezes and "...not responding" issues.
 
