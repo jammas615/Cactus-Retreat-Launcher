@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.net.util.Base64;
+import static org.apache.commons.io.FileUtils.*;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
 import org.eclipse.swt.custom.ScrolledComposite;
@@ -38,17 +39,16 @@ import com.cactusretreat.cactuslauncher.ForumLogin;
 import com.cactusretreat.cactuslauncher.LauncherStarter;
 import com.cactusretreat.cactuslauncher.MCLogin;
 import com.cactusretreat.cactuslauncher.Messages;
-import com.cactusretreat.cactuslauncher.ServerStats;
-import com.cactusretreat.cactuslauncher.UpdateNews;
 import com.cactusretreat.cactuslauncher.exception.ServerDownException;
+import com.cactusretreat.cactuslauncher.util.ServerStats;
+import com.cactusretreat.cactuslauncher.util.UpdateNews;
 
 public class MainWindow {
 	
 	private static final String HEADER_TEXT = "Welcome to the Cactus Retreat Launcher!\n" +
 			"To begin, select a modpack from the drop down menu to the right.";
-	private static String NEWS;
-	private static String NEWS_LINES;
-	private static int USER_RANK;
+	private String news;
+	private int userRank;
 	private Shell shell;
 	private CactusLauncher launcher;
 	private DialogForumLogin forumLogin;
@@ -71,7 +71,6 @@ public class MainWindow {
 	private Composite newsHeaderComposite;
 	private ScrolledComposite newsTextContainer;
 	private Composite newsTextComposite;
-	private Composite newsTextInner;
 	private Link newsText;
 	
 	private Composite loginForm;
@@ -96,6 +95,8 @@ public class MainWindow {
 	private Label infoModpackInstalled;
 	private Label infoServerAddress;
 	private Label infoPlayersOnline;
+	private Button buttonForceUpdate;
+	private Button buttonClearCache;
 	
 	private Font fontTitle;
 	private Font fontText;
@@ -110,11 +111,9 @@ public class MainWindow {
 	public MainWindow(CactusLauncher launcher, Shell shell, int rankLevel) {
 		this.launcher = launcher;
 		this.shell = shell;
-		this.USER_RANK = rankLevel;
+		this.userRank = rankLevel;
 		launcherSettings = launcher.getSettings();
-		String [] str = UpdateNews.getNews();
-		NEWS_LINES = str[0];
-		NEWS = str[1];
+		this.news = UpdateNews.getNews();
 		init();
 		initUI();
 	}
@@ -127,8 +126,8 @@ public class MainWindow {
 		}
 		else {
 			try {
-				USER_RANK = doForumLogin(login[0], login[1], false);
-				if (USER_RANK <= -1) {
+				userRank = doForumLogin(login[0], login[1], false);
+				if (userRank <= -1) {
 					forumLogin = new DialogForumLogin(this);
 					forumLogin.start();
 				}
@@ -290,6 +289,16 @@ public class MainWindow {
 		playersOnline.setText("Players online: ");
 		playersOnline.setFont(fontText);
 		
+		GridData buttonData = new GridData();
+		buttonData.widthHint = 90;
+		
+		new Label(modpackInfoPanelLeft, SWT.NONE);
+		buttonForceUpdate = new Button(modpackInfoPanelLeft, SWT.PUSH | SWT.TOGGLE);
+		buttonForceUpdate.setFont(fontText);
+		buttonForceUpdate.setText("Force update");
+		buttonForceUpdate.setLayoutData(buttonData);
+		buttonForceUpdate.addSelectionListener(new ButtonListener());
+		
 		data = new GridData(SWT.FILL, SWT.FILL, true, true);
 		modpackInfoPanelRight = new Composite(modpackInfoPanel, SWT.NONE);
 		modpackInfoPanelRight.setLayout(new GridLayout(1, false));
@@ -298,6 +307,13 @@ public class MainWindow {
 		infoModpackInstalled = new Label(modpackInfoPanelRight, SWT.NONE);
 		infoServerAddress = new Label(modpackInfoPanelRight, SWT.NONE);
 		infoPlayersOnline = new Label(modpackInfoPanelRight, SWT.NONE);
+		
+		new Label(modpackInfoPanelRight, SWT.NONE);
+		buttonClearCache = new Button(modpackInfoPanelRight, SWT.PUSH);
+		buttonClearCache.setFont(fontText);
+		buttonClearCache.setText("Clear cache");
+		buttonClearCache.setLayoutData(buttonData);
+		buttonClearCache.addSelectionListener(new ButtonListener());
 	}
 	
 	private void setupLeftCol() {
@@ -374,8 +390,8 @@ public class MainWindow {
 		
 		newsText = new Link(newsTextContainer, SWT.WRAP | SWT.MULTI);
 		newsText.setLayoutData(data);
-		if (NEWS != null) {
-			newsText.setText(NEWS);
+		if (news != null) {
+			newsText.setText(news);
 		}
 		else {
 			newsText.setText("Could not get news");
@@ -397,7 +413,7 @@ public class MainWindow {
 		
 		for (String key : modpacksMap.keySet()) {
 			int minRank = Integer.parseInt(modpacksMap.get(key)[3]);
-			if (USER_RANK >= minRank || USER_RANK == 5) {
+			if (userRank >= minRank || userRank == 5) {
 				modpacks.add(key);
 				
 			}
@@ -416,7 +432,7 @@ public class MainWindow {
 	}
 	
 	public void setRank(int rank) {
-		this.USER_RANK = rank;
+		this.userRank = rank;
 	}
 	
 	private void loadProfiles() {
@@ -482,9 +498,10 @@ public class MainWindow {
 			infoServerAddress.setText(address + ":" + port);
 			try {
 				infoPlayersOnline.setText(ServerStats.getServerPlayers(address, Integer.parseInt(port)));
-			} catch (IOException e) {
+			} catch (Exception e) {
 				infoPlayersOnline.setText("Server down.");
 			}
+			
 			modpackInfoPanelRight.layout();
 			modpackInfoPanel.setVisible(true);
 		}
@@ -501,10 +518,19 @@ public class MainWindow {
 		return this.launcherSettings;
 	}
 	
-	public void forceUpdate() {
-		if (!isForcingUpdate) {
+	public void setForceUpdate(boolean state) {
+		if (!isForcingUpdate && state) {
+			buttonForceUpdate.setSelection(true);
+			buttonForceUpdate.setText("Forcing update");
+			buttonForceUpdate.setEnabled(false);
 			isForcingUpdate = true;
 			System.out.println("Forcing update!");
+		}
+		else if (!state){
+			isForcingUpdate = false;
+			buttonForceUpdate.setSelection(false);
+			buttonForceUpdate.setText("Force update");
+			buttonForceUpdate.setEnabled(true);
 		}
 	}
 	
@@ -524,7 +550,7 @@ public class MainWindow {
 	public int doForumLogin(String user, String pass, boolean writeToDisk) throws ServerDownException{
 			int response = ForumLogin.doLogin(user, pass);
 			if (response > -1) {
-				USER_RANK = response;
+				userRank = response;
 				if (writeToDisk) launcher.writeForumLogin(user, pass);
 			}
 			return response;
@@ -563,6 +589,10 @@ public class MainWindow {
 							System.out.println("Closing launcher window");
 							launcher.close();
 						}
+						
+						if (isForcingUpdate) {
+							isForcingUpdate = false;
+						}
 					}
 					else {
 						if (login.getResponse().equals("User not premimum")) {
@@ -594,6 +624,31 @@ public class MainWindow {
 		}
 	}
 	
+	private void clearModpackCache() {
+		File modpackFolder = new File(CactusLauncher.DATA_FOLDER_PATH + File.separator + launcher.getModpacks().get((selectModpack.getText()))[0]);
+		if (modpackFolder.exists()) {
+			try {
+				try {
+					deleteDirectory(modpackFolder);
+					
+					if (!modpackFolder.exists()) {
+						MessageBox msg = new MessageBox(shell, SWT.ICON_INFORMATION);
+						msg.setText("Yay!");
+						msg.setMessage(Messages.DELETE_CACHE_SUCCESSFUL);
+						msg.open();
+					}
+				} catch (IOException e) {
+					MessageBox msg = new MessageBox(shell, SWT.ERROR);
+					msg.setText("Error!");
+					msg.setMessage(Messages.COULD_NOT_DELETE_FOLDER);
+					msg.open();
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
 	private class ButtonListener implements SelectionListener {
 
 		@Override
@@ -603,6 +658,19 @@ public class MainWindow {
 			}
 			if (e.getSource().equals(buttonLaunch)) {
 				doMCLogin();
+			}
+			
+			if (e.getSource().equals(buttonForceUpdate)) {
+				setForceUpdate(true);
+			}
+			
+			if (e.getSource().equals(buttonClearCache)) {
+				MessageBox msg = new MessageBox(shell, SWT.OK | SWT.CANCEL);
+				msg.setText("Confirm action");
+				msg.setMessage(Messages.CONFIRM_CLEAR_CACHE);
+				if (msg.open() == SWT.OK) {
+					clearModpackCache();
+				}
 			}
 		}
 
@@ -618,6 +686,7 @@ public class MainWindow {
 		public void widgetSelected(SelectionEvent e) {
 			if (e.getSource().equals(selectModpack)) {
 				showServerStats();
+				setForceUpdate(false);
 			}
 		}
 		

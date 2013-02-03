@@ -83,12 +83,20 @@ public class ModpackUpdater {
 	}
 	
 	public void run() {
-		while(!isFinished) {			
+		while(!display.isDisposed()) {			
 			
-			if (!display.readAndDispatch()) {
-				display.sleep();
+			if (statusBar.getSelection() == 0) {
+				statusBar.setVisible(false);
 			}
-				
+			else {
+				statusBar.setVisible(true);
+			}
+			
+			if (isFinished) {
+				break;
+			}
+			display.readAndDispatch();
+			
 		}
 		display.dispose();
 	}

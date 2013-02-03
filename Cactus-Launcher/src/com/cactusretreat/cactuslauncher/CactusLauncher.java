@@ -28,24 +28,27 @@ import com.cactusretreat.cactuslauncher.gui.DialogForumLogin;
 import com.cactusretreat.cactuslauncher.gui.MainWindow;
 
 public class CactusLauncher {
-
+	
 	static {
 		if (System.getProperty("os.name").toLowerCase().contains("windows")) {
+			WINDOWS = true;
 			APPDATA_PATH = System.getenv("APPDATA");
+			
+			if (System.getProperty("os.arch").toLowerCase().contains("64")) {
+				OS_ARCH = 64;
+			}
+			else {
+				OS_ARCH = 32;
+			}
 		}
 		else {
+			WINDOWS = false;
 			APPDATA_PATH = System.getProperty("user.home");
-		}
-		
-		if (System.getProperty("os.arch").toLowerCase().contains("64")) {
-			OS_ARCH = 64;
-		}
-		else {
-			OS_ARCH = 32;
 		}
 	}
 	
 	public static final int SHELL_TRIM = SWT.CLOSE | SWT.TITLE | SWT.MIN | SWT.MAX;
+	public static boolean WINDOWS;
 	public static int OS_ARCH;
 	public static String APPDATA_PATH;
 	public static String DATA_FOLDER_PATH = APPDATA_PATH + File.separator + ".cactuslauncher";

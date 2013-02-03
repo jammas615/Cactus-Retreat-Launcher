@@ -1,56 +1,38 @@
 package com.cactusretreat.cactuslauncher.util;
 
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 
-import org.eclipse.swt.widgets.Display;
-
 import com.cactusretreat.cactuslauncher.GameUpdate;
+import com.cactusretreat.cactuslauncher.exception.DownloadException;
 
-import static org.apache.commons.io.FileUtils.copyURLToFile;
+public class Download {
 
-public class Download implements Runnable {
-
-	private GameUpdate updater;
-	private URL url;
-	private File file;
-	
-	public Download(URL url, File file, GameUpdate updater) {
-		this.updater = updater;
-		this.url = url;
-		this.file = file;
-	}
-	
-	@Override
-	public void run() {
-		
-		try {
-			copyURLToFile(url, file);
-			/*
+	public static void copyURLToFile(URL url, File file, GameUpdate updater) throws DownloadException {
+		try {	
 			double size = url.openConnection().getContentLength();
-			BufferedInputStream is = new BufferedInputStream(url.openStream());
+			InputStream is = url.openConnection().getInputStream();
 			FileOutputStream fout = new FileOutputStream(file);
 			try {
-				byte [] data = new byte[1024];
+				byte [] data = new byte [(int) size];
 				int count;
 				double transferred = 0;
-	    		while ((count = is.read(data, 0, 1024)) != -1) {
+	    		while ((count = is.read(data)) != -1) {
 	    			fout.write(data, 0, count);
-	    			transferred += data.length;
+	    			transferred += count;
 	    			updater.updateProgress((int) ((transferred/size)*100));
 	    		}
 				
 			}
 			finally {
+				updater.updateProgress(0);
 				is.close();
 				fout.close();
 			}
-			*/
-		} catch (IOException e) {
-			e.printStackTrace();
+		} catch (Exception e) {
+			throw new DownloadException(file.getName());
 		}
 	}
 

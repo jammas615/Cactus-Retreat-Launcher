@@ -27,6 +27,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.io.monitor.FileAlterationListener;
+import org.apache.commons.io.monitor.FileAlterationObserver;
 
 import static org.apache.commons.io.FileUtils.*;
 
@@ -90,6 +92,11 @@ public class GameUpdate extends Thread {
 		MODPACK_URL = UPDATE_URL + modpackName;
 		this.forceUpdate = forceUpdate;
 		
+		dataFolder = new File(DATA_FOLDER_PATH);
+		if (!dataFolder.exists()) {
+			dataFolder.mkdir();
+		}
+		
 		try {
 			PrintStream out = new PrintStream(new FileOutputStream(new java.io.File(dataFolderPath, "output.txt")));
 			PrintStream err = new PrintStream(new FileOutputStream(new java.io.File(dataFolderPath, "error.txt")));
@@ -98,38 +105,8 @@ public class GameUpdate extends Thread {
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
-		dataFolder = new File(DATA_FOLDER_PATH);
 		
-		if (dataFolder.exists()) {
-			if (forceUpdate) {
-				try {
-					updater.setStatusText("Backing up");
-					backupFolder = new java.io.File(dataFolder.getParentFile(), "backup");
-					if (!backupFolder.exists()) {
-						backupFolder.mkdir();
-					}
-					savesBackup = new java.io.File(dataFolder, "saves");
-					optionsBackup = new java.io.File(dataFolder, "options.txt");
-					
-					if (directoryContains(dataFolder, savesBackup)) {
-						if (savesBackup.exists()) {
-							moveDirectory(savesBackup, new java.io.File(backupFolder, "saves"));
-							savesBackup = new java.io.File(backupFolder, "saves");
-						}
-					}
-					
-					if (directoryContains(dataFolder, optionsBackup)) {
-						if (optionsBackup.exists()) {
-							moveFile(optionsBackup, new java.io.File(backupFolder, "options.txt"));
-							optionsBackup = new java.io.File(backupFolder, "options.txt");
-						}
-					}
-					org.apache.commons.io.FileUtils.cleanDirectory(dataFolder);
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		}
+		
 		
 		modpackFolders = new HashMap<String, File>();
 		modpackZips = new HashMap<String, java.io.File>();
@@ -143,8 +120,39 @@ public class GameUpdate extends Thread {
 		stockMcJar = new File(zipFileFolder, "minecraft.jar");
 		patchedMcJar = new File(DATA_FOLDER_PATH + File.separator + "bin", "minecraft.jar");
 		nativesFolder = new File(DATA_FOLDER_PATH + File.separator + "bin", "natives");
-
 		System.out.println("Updater initialised");
+	}
+	
+	private void backup() {
+		if (dataFolder.exists()) {
+			if (forceUpdate) {
+				try {
+					updater.setStatusText("Backing up");
+					backupFolder = new java.io.File(dataFolder.getParentFile(), "backup");
+					if (!backupFolder.exists()) {
+						backupFolder.mkdir();
+					}
+					savesBackup = new java.io.File(dataFolder, "saves");
+					optionsBackup = new java.io.File(dataFolder, "options.txt");
+					
+					if (directoryContains(dataFolder, savesBackup)) {
+						if (savesBackup.exists()) {
+							System.out.println(new java.io.File(backupFolder, savesBackup.getParentFile().getName()+File.separator+savesBackup.getName()).getAbsolutePath());
+							moveDirectory(savesBackup, new java.io.File(backupFolder, savesBackup.getParentFile().getName()+File.separator+savesBackup.getName()));
+						}
+					}
+					
+					if (directoryContains(dataFolder, optionsBackup)) {
+						if (optionsBackup.exists()) {
+							moveFile(optionsBackup, new java.io.File(backupFolder, optionsBackup.getParentFile().getName()+File.separator+optionsBackup.getName()));
+						}
+					}
+					cleanDirectory(zipFileFolder);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
 	}
 	
 	public void updateModpackConfig() {
@@ -159,7 +167,8 @@ public class GameUpdate extends Thread {
 				modpackFoldersConfig = configModpack.getNode("folders");
 			}
 			
-			copyURLToFile(new URL(MODPACK_URL + "/modpack-config"), newModpackConfigFile);
+			updater.setStatusFine("Updating modpack config");
+			Download.copyURLToFile(new URL(MODPACK_URL + "/modpack-config"), newModpackConfigFile, this);
 
 			newConfigModpack = new Configuration(new FileInputStream(newModpackConfigFile));
 			newModpackFoldersConfig = newConfigModpack.getNode("folders");
@@ -177,12 +186,10 @@ public class GameUpdate extends Thread {
 			
 			String os = System.getProperty("os.name");
 			if (os.toLowerCase().contains("windows")) {
-				//modpackZips.put("natives-win", new File(zipFileFolder, "natives-win.zip"));
 				nativesZip = new java.io.File(zipFileFolder, "natives-win.zip");
 				nativesString = "natives-win";
 			}
 			else {
-				//modpackZips.put("natives-mac-lin", new File(zipFileFolder, "natives-mac-lin.zip"));
 				nativesZip = new java.io.File(zipFileFolder, "natives-mac-lin.zip");
 				nativesString = "natives-mac-lin";
 			}
@@ -276,11 +283,13 @@ public class GameUpdate extends Thread {
 	
 	public void applyUpdates() {
 		// Create any folders that don't exist
+		/*
 		for (String key : modpackFolders.keySet()) {
 			if (!existingFolders.get(key)) {
 				modpackFolders.get(key).mkdir();
 			}
 		}
+		*/
 		
 		try {
 			//Download zips for install
@@ -291,7 +300,7 @@ public class GameUpdate extends Thread {
 					
 					System.out.println("Downloading " + modpackZips.get(key).getName());
 					updater.setStatusFine("Downloading " + modpackZips.get(key).getName());
-					copyURLToFile(url, modpackZips.get(key));
+					Download.copyURLToFile(url, modpackZips.get(key), this);
 					//new Download(url, modpackZips.get(key), this).run();
 				}
 			}
@@ -300,7 +309,7 @@ public class GameUpdate extends Thread {
 				System.out.println("Downloading natives");
 				updater.setStatusFine("Downloading natives");
 				
-				copyURLToFile(new URL(UPDATE_URL + nativesString + ".zip"), nativesZip);
+				Download.copyURLToFile(new URL(UPDATE_URL + nativesString + ".zip"), nativesZip, this);
 				//new Download(new URL(UPDATE_URL + nativesString + ".zip"), modpackZips.get(nativesString), this).run();
 				nativesZip = null;
 				//new Unzip(modpackZips.get(nativesString), new File(DATA_FOLDER_PATH + File.separator + "bin" + File.separator + "natives")).run();
@@ -362,7 +371,8 @@ public class GameUpdate extends Thread {
 			
 			if (stockMcJarOutOfDate || !stockMcJarExists) {
 				System.out.println("Downloading stock mc jar");
-				copyURLToFile(mcURL, stockMcJar);
+				updater.setStatusFine("Downloading minecraft.jar");
+				Download.copyURLToFile(mcURL, stockMcJar, this);
 			}
 			
 			if (patchRequired && stockMcJarOutOfDate) {
@@ -408,8 +418,6 @@ public class GameUpdate extends Thread {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		
-		
 	}
 	
 	private void patchMcJar() {
@@ -424,8 +432,7 @@ public class GameUpdate extends Thread {
 			java.io.File patchedMcJar = new java.io.File(DATA_FOLDER_PATH + File.separator + "bin", "minecraft.jar");
 			
 			URL patchFileURL = new URL("http://mirror.technicpack.net/Technic/Patches/Minecraft/minecraft_" + mcConfig.get("mcjar")[0] + "-" + mcConfig.get("mcrequired")[0] + ".patch");
-			//new Download(patchFileURL, mcPatchFile, this).run();
-			copyURLToFile(patchFileURL, mcPatchFile);
+			Download.copyURLToFile(patchFileURL, mcPatchFile, this);
 			
 			JBPatch.bspatch(stockMcJar, patchedMcJar, mcPatchFile);
 			
@@ -437,18 +444,12 @@ public class GameUpdate extends Thread {
 	}
 	
 	private void installJarmods() {
-		//File unpackedJarFolder = new File(modpackFolders.get("bin"), "jartemp");
-		
-		//byte [] buffer = new byte[2048];
-		
 		try {
 			if (patchedMcJar.exists())	{
 				
 				if (modpackZips.get("jarmods").exists()) {
 					System.out.println("Installing jarmods");
 					updater.setStatusFine("Installing jarmods");
-					//de.schlichtherle.io.File mcJar = new de.schlichtherle.io.File(modpackFolders.get("bin"), "mcjar.jar");
-					//de.schlichtherle.io.File jarmods = new de.schlichtherle.io.File(modpackZips.get("jarmods"));
 					
 					for (java.io.File file : patchedMcJar.listFiles()) {
 						if (file.isDirectory()) {
@@ -469,31 +470,7 @@ public class GameUpdate extends Thread {
 					else {
 						System.out.println("Install of jarmods(forge) failed");
 					}
-					
 					File.umount(true);
-					/*
-					// Un-jar minecraft.jar into temp folder for modding
-					System.out.println("Unpacking minecraft.jar");
-					updater.setStatusFine("Unpacking minecraft.jar");
-					new Unzip(patchedMcJar, unpackedJarFolder).run();
-					
-					for (File file : unpackedJarFolder.listFiles()) {
-						if (file.isDirectory() && file.getName().equals("META-INF")) {
-							deleteDirectory(file);
-						}
-					}
-					
-					// Unzip jar mods (forge, etc.) into temp folder
-					System.out.println("Unpacking jarmods");
-					updater.setStatusFine("Unpacking jar mods");
-					new Unzip(modpackZips.get("jarmods"), unpackedJarFolder).run();
-					
-					// Re-jar modded files into minecraft.jar
-					System.out.println("Re-jaring");
-					updater.setStatusFine("Re-jaring");
-					new Jar(unpackedJarFolder, patchedMcJar).run();
-					*/
-					//deleteDirectory(unpackedJarFolder);
 					updateFolders.put("jarmods", false);
 				}
 			}
@@ -506,6 +483,7 @@ public class GameUpdate extends Thread {
 	@Override
 	public void run() {
 		System.out.println("Updater started");
+		backup();
 		updater.setStatusText("Checking for updates");
 		updateModpackConfig();
 		checkExistingFolders();
@@ -513,12 +491,19 @@ public class GameUpdate extends Thread {
 		updater.setStatusText("Updating");
 		applyUpdates();
 		System.out.println("Updating done!");
+		updater.setStatusFine("");
 		updater.setStatusText("Finished!");
 		
 		if (forceUpdate) {
 			try {
-				moveDirectory(savesBackup, new java.io.File(dataFolder, "saves"));
-				moveFile(optionsBackup, new java.io.File(dataFolder, "options.txt"));
+				for (java.io.File rootFile : backupFolder.listFiles()) {
+					if (rootFile.getName().equals(this.dataFolder.getName()) && rootFile.isDirectory()) {
+						for (java.io.File file : rootFile.listFiles()) {
+							moveToDirectory(file, dataFolder, true);
+						}
+					}
+					deleteDirectory(rootFile);
+				}
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -531,10 +516,6 @@ public class GameUpdate extends Thread {
 		}
 		
 		updater.setFinished();
-	}
-	
-	public GameUpdate get() {
-		return this;
 	}
 
 	public void updateProgress(int i) {

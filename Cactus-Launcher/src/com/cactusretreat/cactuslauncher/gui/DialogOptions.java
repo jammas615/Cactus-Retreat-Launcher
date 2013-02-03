@@ -35,18 +35,10 @@ public class DialogOptions {
 	
 	private GridLayout layout;
 	private GridData data;
-	private RowLayout radioCompositeLayout;
 	
 	private Combo selectRam;
 	private String[] ramList;
-	private Button ram512m;
-	private Button ram1G;
-	private Button ram2G;
-	private Button ram4G;
-	private Button ram8G;
-	private Button ram16G;
 	
-	private Button forceUpdate;
 	private Button checkKeepLauncherOpen;
 	private Button okay;
 	
@@ -93,16 +85,6 @@ public class DialogOptions {
 		new Label(shell, SWT.SEPARATOR | SWT.HORIZONTAL);
 		data = new GridData(SWT.BEGINNING, SWT.BEGINNING, false, false);
 		data.widthHint = 90;
-		forceUpdate = new Button(shell, SWT.PUSH | SWT.TOGGLE);
-		
-		if (window.isForcingUpdate()) {
-			setForceUpdate();
-		}
-		else {
-			forceUpdate.setText("Force update");
-		}
-		forceUpdate.addSelectionListener(new ButtonListener());
-		forceUpdate.setLayoutData(data);
 		
 		new Label(shell, SWT.SEPARATOR | SWT.HORIZONTAL);
 		data = new GridData(SWT.BEGINNING, SWT.BEGINNING, false, false);
@@ -159,12 +141,6 @@ public class DialogOptions {
 		}
 	}
 	
-	private void setForceUpdate() {
-		forceUpdate.setSelection(true);
-		forceUpdate.setText("Forcing update");
-		forceUpdate.setEnabled(false);
-	}
-	
 	public void update() {
 		while (!display.isDisposed()) {
 			if (!display.readAndDispatch()) {
@@ -201,10 +177,6 @@ public class DialogOptions {
 			if (e.getSource().equals(okay)) {
 				okPressed = true;
 				shell.close();
-			}
-			if (e.getSource().equals(forceUpdate)) {
-				setForceUpdate();
-				window.forceUpdate();
 			}
 		}
 

@@ -11,4 +11,7 @@ public class Messages {
 	public static final String RAM_SELECTION_INVALID = "You are running on 32-bit Java, due to a limitation you can only allocate a maximum of 1.5GB of RAM to Minecraft.";
 	public static final String MUST_LOGIN_TO_FORUMS = "You must login to the Cactus Retreat forums in order to use the Cactus Launcher";
 	public static final String CACTUS_SERVER_DOWN = "Either your internet is down or the Cactus Server is. Please try again later.";
+	public static final String COULD_NOT_DELETE_FOLDER = "Could not delete the modpack folder!";
+	public static final String CONFIRM_CLEAR_CACHE = "Are you sure? This action permanently deletes all modpack files including saves and preferences.";
+	public static final String DELETE_CACHE_SUCCESSFUL = "Modpack cache was successfully deleted!";
 }
