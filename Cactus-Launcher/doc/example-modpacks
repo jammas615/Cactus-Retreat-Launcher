@@ -6,7 +6,9 @@
 // 
 
 // Example modpacks definition file.
+// <display name>::<short name>::<server addr>::<port>::<min rank>
 #modpacks
-tekkit:Tekkit
-tfc:Terra Firma Craft
-voltz:Voltz
+Tekkit::tekkit::cactusretreat.com::25565::8
+Terra Firma Craft::tfc::cactusretreat.com::25560::8
+Cactus Pack::cactuspack::cactusretreat.com::25566::11
+It's a Kind of Magic::cactusretreat.com::25567::11
