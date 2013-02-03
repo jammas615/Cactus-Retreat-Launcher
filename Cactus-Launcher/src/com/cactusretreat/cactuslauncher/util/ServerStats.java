@@ -1,4 +1,4 @@
-package com.cactusretreat.cactuslauncher;
+package com.cactusretreat.cactuslauncher.util;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.CharBuffer;
@@ -18,9 +19,10 @@ import com.cactusretreat.cactuslauncher.exception.ServerDownException;
 
 public class ServerStats {
 
-	public static String getServerPlayers(String host, int port) throws IOException {
+	public static String getServerPlayers(String host, int port) throws Exception {
 		byte [] input = new byte [255];
-			Socket socket = new Socket(host, port);
+			Socket socket = new Socket();
+			socket.connect(new InetSocketAddress(host, port), 5000);
 			OutputStream out = socket.getOutputStream();
 			InputStream in = socket.getInputStream();
 			out.write(0xFE);

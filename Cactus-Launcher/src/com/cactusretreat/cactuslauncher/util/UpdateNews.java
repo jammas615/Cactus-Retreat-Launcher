@@ -1,4 +1,4 @@
-package com.cactusretreat.cactuslauncher;
+package com.cactusretreat.cactuslauncher.util;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -9,7 +9,7 @@ import java.net.URL;
 
 public class UpdateNews {
 
-	public static String[] getNews() {
+	public static String getNews() {
 		try {
 			String news = new String();
 			
@@ -20,11 +20,9 @@ public class UpdateNews {
 				news += line + "\n";
 				count++;
 			}
-			return new String [] {String.valueOf(count), news};
+			return news;
 		} catch (Exception e) {
-			e.printStackTrace();
+			return "Could not download news" ;
 		}
-		
-		return null;
 	}
 }
